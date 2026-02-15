@@ -3096,9 +3096,19 @@ function toggleSearchFilter(event) {
     document.body.appendChild(dropdown);
 
     const rect = btn.getBoundingClientRect();
+    const isRTL = document.dir === 'rtl' || document.body.dir === 'rtl';
+    
     dropdown.style.position = 'fixed';
     dropdown.style.top = (rect.bottom + 4) + 'px';
-    dropdown.style.right = (window.innerWidth - rect.right) + 'px';
+    
+    if (isRTL) {
+        dropdown.style.right = (window.innerWidth - rect.right) + 'px';
+        dropdown.style.left = 'auto';
+    } else {
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.right = 'auto';
+    }
+    
     dropdown.style.maxWidth = '320px';
     dropdown.style.zIndex = '9500';
 
@@ -3106,7 +3116,12 @@ function toggleSearchFilter(event) {
     const updatePosition = () => {
         const newRect = btn.getBoundingClientRect();
         dropdown.style.top = (newRect.bottom + 4) + 'px';
-        dropdown.style.right = (window.innerWidth - newRect.right) + 'px';
+        
+        if (isRTL) {
+            dropdown.style.right = (window.innerWidth - newRect.right) + 'px';
+        } else {
+            dropdown.style.left = newRect.left + 'px';
+        }
     };
     window.addEventListener('scroll', updatePosition, true);
 
@@ -4503,9 +4518,17 @@ function toggleColumnFilter(event, columnKey) {
 
     document.body.appendChild(dropdown);
     const rect = th.getBoundingClientRect();
+    const isRTL = document.dir === 'rtl' || document.body.dir === 'rtl';
+    
     dropdown.style.top = (rect.bottom + 8) + 'px';
-    dropdown.style.left = rect.left + 'px';
-
+    
+    if (isRTL) {
+        dropdown.style.right = (window.innerWidth - rect.right) + 'px';
+        dropdown.style.left = 'auto';
+    } else {
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.right = 'auto';
+    }
 
     activeColumnFilter = columnKey;
 }
