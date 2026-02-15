@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <title>تقرير ضريبة القيمة المضافة التفصيلي</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="./style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap"
+        rel="stylesheet" />
+
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" />
+
+</head>
+
+<body>
+    <noscript>
+        <div
+            style="
+          padding: 16px;
+          margin: 16px;
+          border: 1px solid #e2e8f0;
+          border-radius: 10px;
+          background: #fff;
+        ">
+            هذا التقرير يحتاج تفعيل JavaScript ليعمل بشكل صحيح.
+        </div>
+    </noscript>
+
+    <div class="container">
+        <div class="content-wrapper">
+            <div class="page-header">
+                <div class="header-content">
+                    <div class="title-section">
+                        <h1>تقرير ضريبة القيمة المضافة التفصيلي</h1>
+
+                        <p class="subtitle">تقرير ضريبة القيمة المضافة التفصيلي</p>
+                        <p class="date-range-display" aria-live="polite">
+                            <span>من:</span>
+                            <span class="date-value" id="headerDateFrom"></span>
+                            <span class="date-separator">•</span>
+                            <span>إلى:</span>
+                            <span class="date-value" id="headerDateTo"></span>
+
+                            <span class="date-value" id="headerDateTo"></span>
+                        </p>
+                    </div>
+
+                    <div class="header-actions">
+                        <div class="dropdown">
+                            <button class="menu-btn-header" onclick="toggleMenu(event)" type="button"
+                                aria-label="قائمة الإجراءات">
+                                ⋮
+                            </button>
+                            <div class="dropdown-menu" id="mainMenu" role="menu">
+                                <div class="dropdown-item" id="exportMenuBtn" onclick="toggleExportMenu(event)"
+                                    role="menuitem">
+                                    📥 export <span
+                                        style="margin-right:auto; opacity:0.75; font-weight:900;">▼</span>
+                                </div>
+                                <div class="dropdown-submenu" id="exportSubmenu" role="menu">
+                                    <div class="dropdown-item" onclick="exportReportSummary()" role="menuitem">تصدير مجمع
+                                    </div>
+                                    <div class="dropdown-item" onclick="exportReportDetailed()" role="menuitem">تصدير تفصيلي
+                                    </div>
+                                    <div class="dropdown-divider"></div>
+                                    <div class="dropdown-item" onclick="printReport()" role="menuitem">🖨️ طباعة</div>
+                                </div>
+                                <div class="dropdown-item" onclick="refreshData()" role="menuitem">
+                                    🔄 refresh
+                                </div>
+                                <div class="dropdown-divider"></div>
+                                <div class="dropdown-item" onclick="openColumnModal()" role="menuitem">
+                                    ≡ customizecolumns </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="vat-modes" role="tablist" aria-label="وضع الضريبة">
+            </div>
+
+            <div class="kpi-section">
+                <div class="kpi-card output">
+                    <div class="kpi-label"> sales_tax</div>
+                    <div class="kpi-value" id="kpi-output-vat"> </div>
+                    <div class="kpi-unit"></div>
+                </div>
+                <div class="kpi-card input">
+                    <div class="kpi-label"> purchase_tax</div>
+                    <div class="kpi-value" id="kpi-input-vat"></div>
+                    <div class="kpi-unit"></div>
+                </div>
+                <div class="kpi-card net">
+                    <div class="kpi-label"> net_tax_due</div>
+                    <div class="kpi-value" id="kpi-net-vat"></div>
+                    <div class="kpi-unit"></div>
+                </div>
+            </div>
+
+            <div class="control-hub">
+                <div class="control-row" style="margin-bottom: 12px; justify-content: flex-start">
+                    <div class="smart-search-container" style="display: flex; width: auto; gap: 12px; align-items: center;">
+                        <div class="search-with-chips simplified">
+                            <div class="active-chips" id="activeChips"></div>
+                            <div id="searchFilterBtn" class="search-filter-btn" style="display: none;"
+                                onclick="toggleSearchFilter(event)">
+                                <span id="searchFilterBtnText">اختر الحالة...</span>
+                                <span class="arrow">▼</span>
+                            </div>
+                            <div class="search-input-wrap">
+                                <input type="text" id="searchInput" class="search-input-with-chips"
+                                    placeholder="🔍 البحث والفلاتر المتقدمة..." oninput="handleSmartSearch()"
+                                    onfocus="showSmartSearch()" autocomplete="off" />
+                                <button type="button" class="search-clear-btn" id="searchClearBtn"
+                                    onclick="clearSearch()">
+                                    ×
+                                </button>
+                            </div>
+                            <select id="searchScopeSelect" class="search-scope-select"
+                                onchange="onSearchScopeChange(this.value)">
+                            </select>
+                        </div>
+                        <div class="smart-search-dropdown" id="smartSearchDropdown"></div>
+
+                        <!-- Group By Dropdown -->
+                        <div class="group-by-container" style="position: relative;">
+                            <button type="button" class="group-by-toggle" id="groupByToggle"
+                                onclick="toggleGroupByDropdown(event)">
+                                <span style="font-size: 16px;">≡</span>
+                                <span style="font-size: 13px; font-weight: 700;"> Group By</span>
+                                <span style="font-size: 14px; font-weight: 900;">▼</span>
+                            </button>
+                            <div class="group-by-dropdown" id="groupByDropdown">
+                                <div class="group-by-header">Grouped By </div>
+                                <div class="group-by-options" id="groupByOptions">
+                                    <!-- Options will be populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filter By Dropdown -->
+                        <div class="filter-by-container" style="position: relative;">
+                            <button type="button" class="filter-by-toggle" id="filterByToggle"
+                                onclick="toggleFilterByDropdown(event)">
+                                <span style="font-size: 16px;">🔽</span>
+                                <span style="font-size: 13px; font-weight: 700;"> filter by</span>
+                                <span style="font-size: 14px; font-weight: 900;">▼</span>
+                            </button>
+                            <div class="filter-by-dropdown" id="filterByDropdown">
+                                <div class="filter-by-header"> filter by</div>
+                                <div class="filter-by-options" id="filterByOptions">
+                                    <!-- Nested Document Type Filter -->
+                                    <div class="filter-nested-section">
+                                        <div class="filter-nested-header" onclick="toggleNestedFilter('docType')">
+                                            <span>document_type</span>
+                                            <span class="filter-arrow" id="docTypeArrow">◀</span>
+                                        </div>
+                                        <div class="filter-nested-options" id="docTypeOptions" style="display: none;">
+                                            <!-- Options will be populated dynamically -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Nested Tax Category Filter -->
+                                    <div class="filter-nested-section">
+                                        <div class="filter-nested-header" onclick="toggleNestedFilter('taxCategory')">
+                                            <span>tax</span>
+                                            <span class="filter-arrow" id="taxCategoryArrow">◀</span>
+                                        </div>
+                                        <div class="filter-nested-options" id="taxCategoryOptions"
+                                            style="display: none;">
+                                            <!-- Options will be populated dynamically -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-row"
+                    style="
+              display: flex;
+              align-items: center;
+              justify-content: flex-start;
+              gap: 16px;
+            ">
+                    <div class="view-toggle-group" role="group" style="flex-shrink: 0">
+                        <button id="tableViewSummaryBtn" class="view-toggle-btn active" type="button"
+                            onclick="setItemsLinesView('summary')" title="عرض مجمّع">
+                            <span class="view-toggle-icon">☰</span>
+                            <span class="view-toggle-text"> lines</span>
+                        </button>
+                        <button id="tableViewDetailedBtn" class="view-toggle-btn" type="button"
+                            onclick="setItemsLinesView('detailed')" title="عرض تفصيلي">
+                            <span class="view-toggle-icon">━</span>
+                            <span class="view-toggle-text">grouped</span>
+                        </button>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 12px">
+                        <div style="
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  height: 40px;
+                  padding: 0 14px;
+                  background: white;
+                  border: 1.5px solid var(--vp-border-light);
+                  border-radius: var(--vp-radius);
+                  box-shadow: var(--vp-shadow-sm);
+                  cursor: pointer;
+                  transition: all 0.2s;
+                  flex-shrink: 0;
+                "
+                            onclick="openCalendarForRange()">
+                            <span style="font-size: 16px">🗓️</span>
+                            <span
+                                style="
+                    font-size: 11px;
+                    font-weight: 700;
+                    color: var(--vp-text-muted);
+                    white-space: nowrap;
+                  ">time_period
+                            </span>
+
+                            <div id="dateBoxFrom" class="date-box filled">
+                                <span
+                                    style="
+                      font-size: 11px;
+                      font-weight: 700;
+                      color: var(--vp-text-muted);
+                    ">from:</span>
+                                <span id="displayDateFrom" class="date-value"
+                                    style="
+                      font-size: 12px;
+                      font-weight: 700;
+                      color: var(--vp-accent);
+                      min-width: 80px;
+                      text-align: center;
+                    "></span>
+                            </div>
+
+                            <span
+                                style="
+                    font-size: 14px;
+                    color: var(--vp-text-muted);
+                    font-weight: 900;
+                  ">→</span>
+
+                            <div id="dateBoxTo" class="date-box filled">
+                                <span
+                                    style="
+                      font-size: 11px;
+                      font-weight: 700;
+                      color: var(--vp-text-muted);
+                    ">to:</span>
+                                <span id="displayDateTo" class="date-value"
+                                    style="
+                      font-size: 12px;
+                      font-weight: 700;
+                      color: var(--vp-accent);
+                      min-width: 80px;
+                      text-align: center;
+                    "></span>
+                            </div>
+
+                            <input type="text" id="dateRangePicker" placeholder="اختر الفترة" readonly
+                                style="position: absolute; opacity: 0; pointer-events: none" />
+                            <input type="hidden" id="dateFrom" value="2025-01-01" />
+                            <input type="hidden" id="dateTo" value="2025-12-31" />
+                        </div>
+
+                        <div
+                            style="
+                  display: flex;
+                  height: 40px;
+                  position: relative;
+                ">
+                            <div style="position: relative">
+                                <button type="button" onclick="toggleQuickDates(event)"
+                                    style="
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      min-width: 40px;
+                      height: 40px;
+                      padding: 0 10px;
+                      background: white;
+                      border: 1.5px solid var(--vp-border-light);
+                      border-radius: var(--vp-radius);
+                      cursor: pointer;
+                      transition: all 0.2s;
+                      flex-shrink: 0;
+                      border-left: none;
+                    "
+                                    onmouseover="
+                      this.style.background = 'var(--vp-bg-hover)';
+                      this.style.borderColor = 'var(--vp-border-medium)';
+                    "
+                                    onmouseout="
+                      this.style.background = 'white';
+                      this.style.borderColor = 'var(--vp-border-light)';
+                    "
+                                    title="فترات سريعة">
+                                    <span
+                                        style="
+                        font-size: 14px;
+                        font-weight: 900;
+                        color: var(--vp-text-secondary);
+                      ">▼</span>
+                                </button>
+
+                                <div id="quickDatesMenu"
+                                    style="
+                      display: none;
+                      position: absolute;
+                      top: calc(100% + 4px);
+                      right: 0;
+                      background: white;
+                      border: 2px solid var(--vp-border-light);
+                      border-radius: var(--vp-radius);
+                      box-shadow: var(--vp-shadow-lg);
+                      z-index: 9999;
+                      min-width: 200px;
+                    ">
+                                    <!-- Date presets will be injected dynamically by script.js -->
+                                </div>
+                            </div>
+
+                            <button type="button" onclick="resetDateRange()"
+                                style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-width: 40px;
+                    height: 40px;
+                    padding: 0;
+                    background: white;
+                    border: 1.5px solid var(--vp-border-light);
+                    border-radius: var(--vp-radius) ;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    flex-shrink: 0;
+                  "
+                                onmouseover="
+                    this.style.background = 'var(--vp-bg-hover)';
+                    this.style.borderColor = 'var(--vp-border-medium)';
+                  "
+                                onmouseout="
+                    this.style.background = 'white';
+                    this.style.borderColor = 'var(--vp-border-light)';
+                  "
+                                title="إعادة تعيين التاريخ">
+                                <span style="font-size: 16px; line-height: 1">↻</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bulkActions" class="control-hub"
+                style="
+            display: none;
+            margin-top: -16px;
+            margin-bottom: var(--vp-space-8);
+            padding: 14px 16px;
+          ">
+                <div class="control-row"
+                    style="
+              margin-bottom: 0;
+              justify-content: space-between;
+              flex-wrap: wrap;
+            ">
+                    <div
+                        style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+              ">
+                        <strong style="font-size: 13px">
+                            multi_select
+                        </strong>
+                        <span
+                            style="
+                  font-size: 12px;
+                  font-weight: 800;
+                  color: var(--vp-text-secondary);
+                  background: var(--vp-bg-hover);
+                  border: 1px solid var(--vp-border-light);
+                  padding: 4px 10px;
+                  border-radius: 999px;
+                ">
+                            selected: <span id="selectedCount">0</span>
+                        </span>
+                    </div>
+                    <div
+                        style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+              ">
+                        <button type="button" class="icon-only-btn success" onclick="sendSelectedToZatca()"
+                            title="إرسال للهيئة">
+                            ⬆️
+                        </button>
+                        <button type="button" class="icon-only-btn" onclick="exportSelectedRows()"
+                            title="تصدير المحدد">
+                            📥
+                        </button>
+                        <button type="button" class="icon-only-btn danger" onclick="deleteSelectedRows()"
+                            title="حذف المحدد">
+                            🗑️
+                        </button>
+                        <button type="button" class="icon-only-btn danger" onclick="clearSelection()"
+                            title="إلغاء التحديد">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container" aria-label="جدول تقرير الضريبة">
+                <table id="vatTable">
+                    <thead>
+                        <tr>
+                            <th data-col="expand" style="width: 50px" id="expandColumnHeader" role="button"
+                                tabindex="0" title="فتح/طي جميع سطور المنتجات" onclick="toggleExpandAllFromHeader()"
+                                onkeydown="
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      toggleExpandAllFromHeader();
+                    }
+                  ">
+                            </th>
+                            <th data-col="select">
+                                <input type="checkbox" id="selectAll" onchange="toggleSelectAll()"
+                                    aria-label="تحديد الكل" />
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th data-col="date">
+                                date
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th data-col="createdDate">
+                                created_at
+                                <div class="resize-handle"></div>
+                            </th>
+
+                            <th data-col="docNo">
+                                document_number
+                                <span class="column-filter-btn" onclick="toggleColumnFilter(event, 'docNo')">▼</span>
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th data-col="docType">
+                                type
+
+                                <span class="column-filter-btn" onclick="toggleColumnFilter(event, 'type')">▼</span>
+                                <div class="resize-handle"></div>
+                            </th>
+
+                            <th data-col="revenueAccount">
+                                account_name
+                                <span class="column-filter-btn"
+                                    onclick="toggleColumnFilter(event, 'accountName')">▼</span>
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th data-col="reference">
+                                reference
+                                <span class="column-filter-btn" onclick="toggleColumnFilter(event, 'reference')">▼</span>
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th data-col="taxCategory">
+                                tax_category
+                                <span class="column-filter-btn"
+                                    onclick="toggleColumnFilter(event, 'taxCategory')">▼</span>
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th data-col="taxCode">
+                                tax_code
+                                <span class="column-filter-btn" onclick="toggleColumnFilter(event, 'taxCode')">▼</span>
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th data-col="rate">
+                                tax_rate
+                                <span class="column-filter-btn" onclick="toggleColumnFilter(event, 'rate')">▼</span>
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th data-col="base">
+                                المبلغ غير شامل ضريبة
+
+                            </th>
+                            <th data-col="vat">
+                                مبلغ الضريبة
+
+                            </th>
+                            <th data-col="total">
+                                الإجمالي شامل ضريبة
+
+                            </th>
+                            <th data-col="taxType">
+                                tax_type
+                                <span class="column-filter-btn" onclick="toggleColumnFilter(event, 'taxType')">▼</span>
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th data-col="branch">
+                                project
+                                <span class="column-filter-btn" onclick="toggleColumnFilter(event, 'project')">▼</span>
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th data-col="attachments">
+                                attachments
+                                <span class="column-filter-btn"
+                                    onclick="toggleColumnFilter(event, 'attachments')">▼</span>
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th data-col="notes">
+                                notes
+                                <span class="column-filter-btn" onclick="toggleColumnFilter(event, 'notes')">▼</span>
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th data-col="paymentStatus">
+                                the_payment_status
+                                <span class="column-filter-btn"
+                                    onclick="toggleColumnFilter(event, 'paymentStatus')">▼</span>
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th data-col="createdBy">
+                                created_by <span class="column-filter-btn"
+                                    onclick="toggleColumnFilter(event, 'createdBy')">▼</span>
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th data-col="postingStatus">
+                                carry_forward_status
+                                <span class="column-filter-btn"
+                                    onclick="toggleColumnFilter(event, 'postingStatus')">▼</span>
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th data-col="zatcaStatus">
+                                sent_status <span class="column-filter-btn"
+                                    onclick="toggleColumnFilter(event, 'zatcaStatus')">▼</span>
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th data-col="vatReturn">
+                                listed_status
+                                <span class="column-filter-btn" onclick="toggleColumnFilter(event, 'vatReturn')">▼</span>
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th data-col="actions">actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="16"> loading</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="8" style="text-align: right; font-weight: 900">
+                                total
+                            </td>
+                            <td id="total-base" style="font-weight: 900">0.00</td>
+                            <td id="total-vat" style="font-weight: 900">0.00</td>
+                            <td id="total-amount" style="font-weight: 900">0.00</td>
+                            <td colspan="5"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="page-footer">
+                <div class="footer-info">
+                    <span>show:</span>
+                    <select id="perPageSelect" onchange="changePerPage(this.value)"
+                        style="
+                padding: 10px 14px;
+                border: 1.5px solid var(--vp-border-medium);
+                border-radius: var(--vp-radius-sm);
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+              ">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                    </select>
+                    <span>|</span>
+                    <span>show <span id="pageStart">1</span>-<span id="pageEnd">20</span> من
+                        <span id="totalCount">20</span></span>
+                </div>
+                <div class="pagination">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <div class="details-panel-overlay" id="detailsOverlay" onclick="closeDetailsPanel()"></div>
+        <div class="details-panel" id="detailsPanel" role="dialog" aria-label="تفاصيل المستند">
+            <div class="details-header">
+                <div class="details-header-content">
+                    <div class="details-doc-number" id="detailsDocNumber">INV-1001</div>
+                    <div class="details-doc-type-badge" id="detailsDocTypeBadge">
+                        فاتورة مبيعات
+                    </div>
+                </div>
+                <button class="details-close-btn" onclick="closeDetailsPanel()" type="button" aria-label="إغلاق">
+                    ×
+                </button>
+            </div>
+
+            <div class="details-body">
+                <div class="details-section">
+                    <div class="details-section-title">📋 معلومات أساسية</div>
+                    <div class="details-grid">
+                        <div class="details-item">
+                            <span class="details-label">📅 التاريخ</span>
+                            <span class="details-value" id="detailsDate">-</span>
+                        </div>
+                        <div class="details-item">
+                            <span class="details-label">👤 الطرف</span>
+                            <span class="details-value" id="detailsParty">-</span>
+                        </div>
+                        <div class="details-item">
+                            <span class="details-label">🏢 المشروع</span>
+                            <span class="details-value" id="detailsBranch">-</span>
+                        </div>
+                        <div class="details-item">
+                            <span class="details-label">🔗 المرجع</span>
+                            <span class="details-value" id="detailsReference">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="details-section">
+                    <div class="details-section-title">💰 المبالغ</div>
+                    <div class="details-amounts">
+                        <div class="details-amount-row">
+                            <span class="details-amount-label">المبلغ الخاضع للضريبة</span>
+                            <span class="details-amount-value" id="detailsBase">0.00</span>
+                        </div>
+                        <div class="details-amount-row">
+                            <span class="details-amount-label">نسبة الضريبة</span>
+                            <span class="details-amount-value" id="detailsRate">0%</span>
+                        </div>
+                        <div class="details-amount-row">
+                            <span class="details-amount-label">مبلغ الضريبة</span>
+                            <span class="details-amount-value accent" id="detailsVAT">0.00</span>
+                        </div>
+                        <div class="details-amount-row total">
+                            <span class="details-amount-label">الإجمالي</span>
+                            <span class="details-amount-value" id="detailsTotal">0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="details-section">
+                    <div class="details-section-title">📦 المنتجات</div>
+                    <div class="details-items" id="detailsItems">
+                        <p class="details-notes-empty">لا توجد منتجات</p>
+                    </div>
+                </div>
+
+                <div class="details-section">
+                    <div class="details-section-title">📊 تفاصيل الضريبة</div>
+                    <div class="details-grid">
+                        <div class="details-item">
+                            <span class="details-label">فئة الضريبة</span>
+                            <span class="details-value" id="detailsTaxCategory">-</span>
+                        </div>
+                        <div class="details-item">
+                            <span class="details-label">كود الضريبة</span>
+                            <span class="details-value" id="detailsTaxCode">-</span>
+                        </div>
+                        <div class="details-item">
+                            <span class="details-label">نوع الضريبة</span>
+                            <span class="details-value" id="detailsTaxType">-</span>
+                        </div>
+                        <div class="details-item">
+                            <span class="details-label">الحالة</span>
+                            <span class="details-badge" id="detailsStatus">نشط</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="details-section">
+                    <div class="details-section-title">📝 ملاحظات</div>
+                    <div class="details-notes" id="detailsNotes">
+                        <p class="details-notes-empty">لا توجد ملاحظات</p>
+                    </div>
+                </div>
+
+                <div class="details-section">
+                    <div class="details-section-title">📎 المرفقات</div>
+                    <div class="details-attachments" id="detailsAttachments">
+                        <span class="details-attachments-count">0 مرفق</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="columnModal" onclick="closeColumnModal()">
+            <div class="modal" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <div class="modal-title">تخصيص الأعمدة</div>
+                    <button class="modal-close" onclick="closeColumnModal()" type="button">
+                        ×
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" class="modal-search" placeholder="بحث..."
+                        oninput="searchColumns(this.value)" />
+                    <div id="columnsList"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-save" onclick="saveColumns()" type="button">
+                        حفظ
+                    </button>
+                    <button class="btn-secondary" onclick="resetColumns()" type="button">
+                        إعادة ضبط
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loadingText">جاري التحميل...</div>
+            <div class="loading-subtext" id="loadingSubtext">الرجاء الانتظار</div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="globalTooltip"></div>
+
+    <div id="toastContainer"
+        style="
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none;
+      ">
+    </div>
+</body>
+<script src="./script.js"></script>
+
+</html>
