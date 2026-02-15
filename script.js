@@ -918,14 +918,20 @@ async function loadNotesData() {
 
     // Seed with existing sample notes (only if no stored notes for docNo)
     normalizedVatData.forEach(row => {
-        const base = String(row.notes || '').trim();
-        if (!base) return;
-        if (!notesData[row.docNo] || !Array.isArray(notesData[row.docNo]) || notesData[row.docNo]
-            .length === 0) {
-            notesData[row.docNo] = [{
-                text: base,
-                ts: null
-            }];
+        if (!row.notes) return;
+
+        // If it's an array of strings/objects
+        if (Array.isArray(row.notes) && row.notes.length > 0) {
+            if (!notesData[row.docNo] || !Array.isArray(notesData[row.docNo]) || notesData[row.docNo].length === 0) {
+                notesData[row.docNo] = row.notes.map(n => {
+                    // Handle if n is object or string
+                    const txt = (typeof n === 'object' && n !== null && n.text) ? n.text : String(n);
+                    return {
+                        text: txt,
+                        ts: null
+                    };
+                });
+            }
         }
     });
 }
@@ -3090,11 +3096,34 @@ function toggleSearchFilter(event) {
     document.body.appendChild(dropdown);
 
     const rect = btn.getBoundingClientRect();
-    dropdown.style.position = 'absolute';
+    dropdown.style.position = 'fixed';
     dropdown.style.top = (rect.bottom + 4) + 'px';
     dropdown.style.right = (window.innerWidth - rect.right) + 'px';
     dropdown.style.maxWidth = '320px';
     dropdown.style.zIndex = '9500';
+
+    // Update dropdown position on scroll
+    const updatePosition = () => {
+        const newRect = btn.getBoundingClientRect();
+        dropdown.style.top = (newRect.bottom + 4) + 'px';
+        dropdown.style.right = (window.innerWidth - newRect.right) + 'px';
+    };
+    window.addEventListener('scroll', updatePosition, true);
+
+    // Clean up listener when dropdown is removed
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            mutation.removedNodes.forEach((node) => {
+                if (node === dropdown) {
+                    window.removeEventListener('scroll', updatePosition, true);
+                    observer.disconnect();
+                }
+            });
+        });
+    });
+    observer.observe(document.body, { childList: true });
+
+
 
 }
 
@@ -4283,10 +4312,10 @@ function openDetailsPanel(id) {
     const notes = getNotesForDoc(transaction.docNo);
     if (notes.length > 0) {
         notesContainer.innerHTML = notes.map(note => `
- <div class="details-note-item">
- <p class="details-note-text">${escapeHtml(note.text)}</p>
- </div>
- `).join('');
+            <div class="details-note-item">
+                <p class="details-note-text">${escapeHtml(note.text)}</p>
+            </div>
+        `).join('\n');
     } else {
         notesContainer.innerHTML = '<p class="details-notes-empty">لا توجد ملاحظات</p>';
     }
@@ -4475,7 +4504,7 @@ function toggleColumnFilter(event, columnKey) {
     document.body.appendChild(dropdown);
     const rect = th.getBoundingClientRect();
     dropdown.style.top = (rect.bottom + 8) + 'px';
-        dropdown.style.left = rect.left + 'px';
+    dropdown.style.left = rect.left + 'px';
 
 
     activeColumnFilter = columnKey;
