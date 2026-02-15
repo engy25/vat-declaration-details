@@ -683,7 +683,8 @@ function transformApiData(apiResponse) {
             taxType: taxType,
             branch: item.project || '-',
             attachments: (item.attachments) || 0,
-            notes: Array.isArray(item.notes) && item.notes.length > 0 ? item.notes.join(' - ') : '-',
+            notes: item.notes || [],
+            notes_count: Array.isArray(item.notes) ? item.notes.length : 0,
             zatcaStatus: zatcaStatus,
             vatReturn: vatReturn,
             postingStatus: item.carry_forward_status,
@@ -3078,27 +3079,21 @@ function toggleSearchFilter(event) {
         return;
     }
 
-    const container = document.querySelector('.search-input-wrap');
-    if (!container) return;
-
-    if (getComputedStyle(container).position === 'static') {
-        container.style.position = 'relative';
-    }
+    const btn = document.getElementById('searchFilterBtn');
+    if (!btn) return;
 
     const dropdown = createColumnFilterDropdown(columnKey);
     if (!dropdown) return;
 
     dropdown.dataset.column = columnKey;
 
-    container.appendChild(dropdown);
+    document.body.appendChild(dropdown);
 
+    const rect = btn.getBoundingClientRect();
     dropdown.style.position = 'absolute';
-    dropdown.style.top = '100%';
-    dropdown.style.marginTop = '38px';
-    dropdown.style.left = '10px';
-    dropdown.style.right = '10px';
-    dropdown.style.minWidth = '240px';
-    dropdown.style.maxWidth = 'none';
+    dropdown.style.top = (rect.bottom + 4) + 'px';
+    dropdown.style.right = (window.innerWidth - rect.right) + 'px';
+    dropdown.style.maxWidth = '320px';
     dropdown.style.zIndex = '9500';
 
 }
@@ -3662,7 +3657,8 @@ async function renderTable(apiResponse = null) {
                             '',
                         branch: item.project || '-',
                         attachments: item.attachments || 0,
-                        notes: item.notes || '-',
+                        notes: item.notes || [],
+                        notes_count: Array.isArray(item.notes) ? item.notes.length : 0,
                         zatcaStatus: item.is_sent_to_tax_zakat,
                         vatReturn: item.vat_declaration,
                         postingStatus: item.carry_forward_status,
@@ -3699,7 +3695,16 @@ async function renderTable(apiResponse = null) {
                         <td data-col="branch">${transformedItem.branch}</td>
                         <td data-col="attachments">${attach}</td>
                         <td data-col="notes" onclick="event.stopPropagation()">
-                            <span class="note-cell">${transformedItem.notes}</span>
+                            <div class="note-cell">
+                            ${transformedItem.notes_count > 0 ? `
+                                <button class="note-add-btn" type="button" onclick="toggleNoteEditor('${transformedItem.docNo}'); event.stopPropagation();" title="إضافة ملاحظة">+</button>
+                                <span class="note-badge">${Array.isArray(transformedItem.notes) ? transformedItem.notes[transformedItem.notes.length - 1] : ''}</span>
+                                <span class="notes-count-badge">${transformedItem.notes_count}</span>
+                            ` : `
+                                <button class="note-add-btn" type="button" onclick="toggleNoteEditor('${transformedItem.docNo}'); event.stopPropagation();" title="إضافة ملاحظة">+</button>
+                                <span>-</span>
+                            `}
+                            </div>
                         </td>
                         <td data-col="paymentStatus"><span class="payment-status ${transformedItem.paymentStatus}">${transformedItem.paymentStatus}</span></td>
                         <td data-col="createdBy">${transformedItem.createdBy}</td>
@@ -3794,9 +3799,16 @@ async function renderTable(apiResponse = null) {
  <td data-col="branch">${item.branch}</td>
  <td data-col="attachments">${attach}</td>
  <td data-col="notes" onclick="event.stopPropagation()">
- <span class="note-cell">
-${item.notes}
- </span>
+ <div class="note-cell">
+ ${item.notes_count > 0 ? `
+ <button class="note-add-btn" type="button" onclick="toggleNoteEditor('${item.docNo}'); event.stopPropagation();" title="إضافة ملاحظة">+</button>
+ <span class="note-badge">${Array.isArray(item.notes) ? item.notes[item.notes.length - 1] : ''}</span>
+ <span class="notes-count-badge">${item.notes_count}</span>
+ ` : `
+ <span>-</span>
+ <button class="note-add-btn" type="button" onclick="toggleNoteEditor('${item.docNo}'); event.stopPropagation();" title="إضافة ملاحظة">+</button>
+ `}
+ </div>
  <div class="note-editor ${isEditorOpen ? 'show' : ''}" onclick="event.stopPropagation()">
  <div class="note-editor-row">
  <input id="noteInput_${item.docNo}" type="text" placeholder="اكتب ملاحظة..." onkeydown="if(event.key==='Enter'){saveNoteEditor('${item.docNo}')}; if(event.key==='Escape'){cancelNoteEditor()}" />
@@ -4003,10 +4015,16 @@ ${item.notes}
  <td data-col="branch">${item.branch}</td>
  <td data-col="attachments">${attach}</td>
  <td data-col="notes" onclick="event.stopPropagation()">
- <span class="note-cell">
+ <div class="note-cell">
+ ${notesCount > 0 ? `
  <button class="note-add-btn" type="button" onclick="toggleNoteEditor('${item.docNo}'); event.stopPropagation();" title="إضافة ملاحظة">+</button>
- ${notesCount && !isEditorOpen ? `<span class="note-preview" title="${notesTitle}">💬 ${preview}</span><span class="note-count" title="عدد الملاحظات">${notesCount}</span>` : (notesCount ? `<span class="note-count" title="عدد الملاحظات">${notesCount}</span>` : `<span class="note-indicator" title="لا توجد ملاحظات">–</span>`)}
- </span>
+ <span class="note-badge">${preview}</span>
+ <span class="notes-count-badge">${notesCount}</span>
+ ` : `
+ <button class="note-add-btn" type="button" onclick="toggleNoteEditor('${item.docNo}'); event.stopPropagation();" title="إضافة ملاحظة">+</button>
+ <span>-</span>
+ `}
+ </div>
  <div class="note-editor ${isEditorOpen ? 'show' : ''}" onclick="event.stopPropagation()">
  <div class="note-editor-row">
  <input id="noteInput_${item.docNo}" type="text" placeholder="اكتب ملاحظة..." onkeydown="if(event.key==='Enter'){saveNoteEditor('${item.docNo}')}; if(event.key==='Escape'){cancelNoteEditor()}" />
@@ -4457,7 +4475,8 @@ function toggleColumnFilter(event, columnKey) {
     document.body.appendChild(dropdown);
     const rect = th.getBoundingClientRect();
     dropdown.style.top = (rect.bottom + 8) + 'px';
-    dropdown.style.right = (window.innerWidth - rect.right) + 'px';
+        dropdown.style.left = rect.left + 'px';
+
 
     activeColumnFilter = columnKey;
 }
