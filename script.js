@@ -108,6 +108,10 @@ async function fetchVatDeclarationDetails(type = null, dateRange = null, customS
             url.searchParams.set('group_by', groupBy);
         }
 
+        // Add format parameter based on current view mode
+        const format = itemsLinesView === 'detailed' ? 'groups' : 'lines';
+        url.searchParams.set('format', format);
+
         // Clear previous keyword filters from URL
         for (const [key] of url.searchParams.entries()) {
             if (key.startsWith('keywordFilters[')) {
@@ -4585,7 +4589,7 @@ function createColumnFilterDropdown(columnKey) {
             apiPaymentStatuses.forEach(status => {
                 const isChecked = current.includes(status.value);
                 html += '<div class="column-filter-option" data-value="' + status.value +
-                    '"><input type="radio" name="col_filter_' + columnKey + '" id="col_' + columnKey + '_' +
+                    '"><input type="checkbox" name="col_filter_' + columnKey + '" id="col_' + columnKey + '_' +
                     status.value + '" ' + (isChecked ? 'checked' : '') + '><label for="col_' + columnKey +
                     '_' + status.value + '"><span>' + status.label + '</span></label></div>';
             });
@@ -4670,8 +4674,8 @@ function applyColumnFilter(columnKey) {
         columnKey === "taxCategory"
     ) {
 
-        const radios = dropdown.querySelectorAll('.column-filter-option input[type="radio"]:checked');
-        const selectedValues = Array.from(radios).map(rb => rb.closest('.column-filter-option').dataset.value);
+        const checkboxes = dropdown.querySelectorAll('.column-filter-option input[type="checkbox"]:checked, .column-filter-option input[type="radio"]:checked');
+        const selectedValues = Array.from(checkboxes).map(cb => cb.closest('.column-filter-option').dataset.value);
         if (columnKey == "attachments") {
             fetchVatDeclarationDetails(null, null, null, null, null, "attachment", selectedValues[0] || null);
         }
@@ -4706,8 +4710,8 @@ function applyColumnFilter(columnKey) {
             columnFilters[columnKey] = selectedValues;
             // Send filter to API with correct parameter name
             if (columnKey === 'paymentStatus') {
-
-                fetchVatDeclarationDetails(null, null, null, null, null, 'payment_status', selectedValues[0]);
+                // For payment status, send all selected values as comma-separated
+                fetchVatDeclarationDetails(null, null, null, null, null, 'payment_status', selectedValues.join(','));
             } else if (columnKey === 'postingStatus') {
                 fetchVatDeclarationDetails(null, null, null, null, null, 'carry_forward_status', selectedValues[0]);
             } else if (columnKey === 'zatcaStatus') {
