@@ -4524,6 +4524,7 @@ function toggleColumnFilter(event, columnKey) {
     const rect = th.getBoundingClientRect();
     const isRTL = document.dir === 'rtl' || document.body.dir === 'rtl';
     
+    dropdown.style.position = 'fixed';
     dropdown.style.top = (rect.bottom + 8) + 'px';
     
     if (isRTL) {
@@ -4535,6 +4536,32 @@ function toggleColumnFilter(event, columnKey) {
     }
 
     activeColumnFilter = columnKey;
+
+    // Update dropdown position on scroll
+    const updatePosition = () => {
+        const newRect = th.getBoundingClientRect();
+        dropdown.style.top = (newRect.bottom + 8) + 'px';
+        
+        if (isRTL) {
+            dropdown.style.right = (window.innerWidth - newRect.right) + 'px';
+        } else {
+            dropdown.style.left = newRect.left + 'px';
+        }
+    };
+    window.addEventListener('scroll', updatePosition, true);
+
+    // Clean up listener when dropdown is removed
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            mutation.removedNodes.forEach((node) => {
+                if (node === dropdown) {
+                    window.removeEventListener('scroll', updatePosition, true);
+                    observer.disconnect();
+                }
+            });
+        });
+    });
+    observer.observe(document.body, { childList: true });
 }
 
 function createColumnFilterDropdown(columnKey) {
