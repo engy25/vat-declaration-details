@@ -4890,9 +4890,9 @@ function setItemsLinesView(view, opts = {}) {
     }
     saveState();
     updateItemsLinesViewUI();
-    applyFilters({
-        resetPage: false
-    });
+    
+    // Call API immediately when view changes
+    fetchVatDeclarationDetails();
 }
 
 function updateItemsLinesViewUI() {
